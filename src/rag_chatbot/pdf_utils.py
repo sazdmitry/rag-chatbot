@@ -8,9 +8,10 @@ def load_pdf_text(pdf_path: str) -> List[Tuple[int, str]]:
     reader = PdfReader(pdf_path)
     pages: List[Tuple[int, str]] = []
     for i, page in enumerate(reader.pages):
+        page_no = i + 1
         try:
             txt = page.extract_text() or ""
         except Exception:
             txt = ""
-        pages.append((i + 1, txt))
+        pages.append((page_no, txt))
     return pages

@@ -10,6 +10,10 @@ class Config:
     embed_model_primary: str = "bge-m3"
     embed_model_fallback: str = "nomic-embed-text"
 
+    # PDF pre-processing
+    toc_pages: int = 0  # number of initial table-of-contents pages
+    footer_regex: str = ""
+
     # Chunking
     atomic_chunk_tokens: int = 320
     atomic_chunk_overlap_tokens: int = 48
