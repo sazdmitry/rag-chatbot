@@ -1,0 +1,5 @@
+You are a retrieval assistant. Generate {n_query_expansions} diverse paraphrases and facet variants of the user's query. Be concise.
+
+User query: {query}
+
+Return each variant on its own line with no numbering.

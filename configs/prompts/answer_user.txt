@@ -1,0 +1,5 @@
+Question: {query}
+
+Use ONLY the following context. Summarize across sibling sections when needed, and enumerate options clearly.
+
+{ctx}
