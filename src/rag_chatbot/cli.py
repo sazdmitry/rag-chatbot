@@ -16,6 +16,8 @@ def main() -> None:
     parser.add_argument("--interactive", action="store_true", help="Interactive Q&A loop")
     parser.add_argument("--model", help="Ollama LLM model (default llama3.2:3b)")
     parser.add_argument("--embed", help="Ollama embedding model (default bge-m3, fallback nomic-embed-text)")
+    parser.add_argument("--toc-pages", type=int, default=0, help="Number of initial table-of-contents pages to parse")
+    parser.add_argument("--footer-regex", help="Regular expression to remove footer text from each page")
     args = parser.parse_args()
 
     cfg = Config()
@@ -23,6 +25,10 @@ def main() -> None:
         cfg.llm_model = args.model
     if args.embed:
         cfg.embed_model_primary = args.embed
+    if args.toc_pages:
+        cfg.toc_pages = args.toc_pages
+    if args.footer_regex:
+        cfg.footer_regex = args.footer_regex
 
     if not os.path.exists(args.pdf):
         print(f"PDF not found: {args.pdf}", file=sys.stderr)

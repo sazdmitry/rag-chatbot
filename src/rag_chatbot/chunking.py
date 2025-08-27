@@ -27,7 +27,7 @@ class Chunk:
         return f"[{self.toc_path} — {pages}]"
 
 
-HEADING_RE = re.compile(r"^\s*(?P<num>\d+(?:\.\d+)*)\s+(?P<title>[^\n]{1,120}?)(?:\.\s*|\s*)$", re.MULTILINE)
+TOC_ENTRY_RE = re.compile(r"^\s*(?P<num>\d+(?:\.\d+)*)\s+(?P<title>.*?)\.\s+(?P<page>\d+)\s*$", re.MULTILINE)
 
 
 def normalize_ws(s: str) -> str:
@@ -56,29 +56,21 @@ def split_paragraphs(s: str) -> List[str]:
     return [normalize_ws(x.replace("\n", " ")) for x in merged if normalize_ws(x)]
 
 
-def detect_headings(pages: List[Tuple[int, str]]):
-    headings = []
-    for page_no, text in pages:
-        for m in HEADING_RE.finditer(text):
-            num = m.group("num").strip()
-            title = m.group("title").strip().rstrip(" .")
-            if len(title) < 2:
-                continue
-            headings.append({
-                "num": num,
-                "title": title,
-                "page": page_no,
-                "span": m.span(),
-            })
-    deduped = []
-    seen: List[Tuple[int, str]] = []
-    for h in headings:
-        key = (h["page"], h["num"])
-        if key in seen:
+def parse_toc(pages: List[Tuple[int, str]], n_pages: int):
+    """Extract heading entries from the table of contents pages."""
+    text = "\n".join(t for _, t in pages[:n_pages])
+    entries = []
+    for m in TOC_ENTRY_RE.finditer(text):
+        try:
+            page = int(m.group("page"))
+        except ValueError:
             continue
-        seen.append(key)
-        deduped.append(h)
-    return deduped
+        entries.append({
+            "num": m.group("num").strip(),
+            "title": m.group("title").strip(),
+            "page": page,
+        })
+    return entries
 
 
 def build_toc_paths(headings: List[Dict[str, Any]]) -> Dict[str, str]:
@@ -160,13 +152,35 @@ def chunk_section(text: str, base_meta: Dict[str, Any], cfg: Config) -> List[Chu
 
 
 def build_chunks(pages: List[Tuple[int, str]], cfg: Config) -> List[Chunk]:
-    headings = detect_headings(pages)
+    """Build content chunks, optionally seeding headings from TOC pages."""
+    if cfg.footer_regex:
+        footer_re = re.compile(cfg.footer_regex, re.MULTILINE)
+        pages = [(p, footer_re.sub("", t)) for p, t in pages]
+
+    toc_headings: List[Dict[str, Any]] = []
+    body_pages = pages
+    if cfg.toc_pages > 0:
+        toc_headings = parse_toc(pages, cfg.toc_pages)
+        body_pages = pages[cfg.toc_pages:]
+
+    page_map = {p: t for p, t in body_pages}
+
+    headings: List[Dict[str, Any]] = []
+    if toc_headings:
+        for h in toc_headings:
+            txt = page_map.get(h["page"], "")
+            pat = re.compile(rf"^\s*{re.escape(h['num'])}\s+{re.escape(h['title'])}", re.MULTILINE)
+            m = pat.search(txt)
+            span = m.span() if m else (0, 0)
+            h["span"] = span
+            headings.append(h)
+
     if not headings:
-        full_text = "\n\n".join([t for _, t in pages])
+        full_text = "\n\n".join([t for _, t in body_pages])
         base = {
             "toc_path": "Document",
-            "page_start": 1,
-            "page_end": len(pages),
+            "page_start": body_pages[0][0] if body_pages else 1,
+            "page_end": body_pages[-1][0] if body_pages else 1,
             "heading_num": "0",
             "heading_title": "Document",
             "heading_level": 0,
@@ -177,25 +191,24 @@ def build_chunks(pages: List[Tuple[int, str]], cfg: Config) -> List[Chunk]:
     headings.sort(key=lambda h: (h["page"], h["span"][0]))
     path_by_num = build_toc_paths(headings)
 
-    page_map = {p: t for p, t in pages}
     sections: List[Tuple[Dict[str, Any], str, int, int]] = []
 
     for idx, h in enumerate(headings):
         start_page = h["page"]
         start_off = h["span"][1]
-        end_page = pages[-1][0]
+        end_page = body_pages[-1][0]
         end_off = len(page_map[end_page])
         if idx + 1 < len(headings):
             nh = headings[idx + 1]
             end_page = nh["page"]
             end_off = nh["span"][0]
         if start_page == end_page:
-            body = page_map[start_page][start_off:end_off]
+            body = page_map.get(start_page, "")[start_off:end_off]
         else:
-            parts = [page_map[start_page][start_off:]]
+            parts = [page_map.get(start_page, "")[start_off:]]
             for p in range(start_page + 1, end_page):
-                parts.append(page_map[p])
-            parts.append(page_map[end_page][:end_off])
+                parts.append(page_map.get(p, ""))
+            parts.append(page_map.get(end_page, "")[:end_off])
             body = "\n".join(parts)
         body = body.strip()
         sections.append((h, body, start_page, end_page))

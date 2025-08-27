@@ -24,6 +24,16 @@ python rag_pdf_ollama.py --pdf /path/manual.pdf --interactive
 
 You can specify alternative Ollama models via `--model` and `--embed`.
 
+If the PDF has a table of contents or repetitive footers you want to
+handle specially, the CLI offers additional options:
+
+```bash
+python rag_pdf_ollama.py --pdf /path/manual.pdf --toc-pages 5 --footer-regex "Footer text"
+```
+
+* `--toc-pages` – number of initial pages that form the table of contents (they are parsed but not chunked).
+* `--footer-regex` – regular expression removed from each page (useful for footers).
+
 For direct module execution, ensure the `src` directory is on `PYTHONPATH` and run:
 
 ```bash
