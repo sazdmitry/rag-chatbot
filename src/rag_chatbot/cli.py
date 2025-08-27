@@ -2,11 +2,11 @@ import argparse
 import os
 import sys
 
-from .answer import answer_query
-from .chunking import build_chunks
-from .config import Config
-from .index import build_index
-from .pdf_utils import load_pdf_text
+from rag_chatbot.answer import answer_query
+from rag_chatbot.chunking import build_chunks
+from rag_chatbot.config import Config
+from rag_chatbot.index import build_index
+from rag_chatbot.pdf_utils import load_pdf_text
 
 
 def main() -> None:

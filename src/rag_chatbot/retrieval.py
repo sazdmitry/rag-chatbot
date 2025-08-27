@@ -1,11 +1,14 @@
 import re
 from typing import List, Dict
 
-from langchain_community.llms import Ollama
+from langchain_ollama import OllamaLLM
 from rapidfuzz import fuzz
 
-from .config import Config
-from .index import Index
+from rag_chatbot.config import Config
+from rag_chatbot.index import Index
+from rag_chatbot.prompt_registry import registry
+
+TOKEN_PATTERN = re.compile(r"[a-z0-9]+")
 
 # Optional reranker
 try:
@@ -16,14 +19,10 @@ except Exception:  # pragma: no cover - optional dependency
 
 
 def multi_query_expand(query: str, cfg: Config) -> List[str]:
-    llm = Ollama(model=cfg.llm_model)
-    prompt = f"""
-You are a retrieval assistant. Generate {cfg.n_query_expansions} diverse paraphrases and facet variants of the user's query. Be concise.
-
-User query: {query}
-
-Return each variant on its own line with no numbering.
-""".strip()
+    llm = OllamaLLM(model=cfg.llm_model)
+    prompt = registry["multi_query_expand"].format(
+        n_query_expansions=cfg.n_query_expansions, query=query
+    )
     out = llm.invoke(prompt)
     lines = [re.sub(r"[ \t]+", " ", x).strip() for x in out.splitlines() if re.sub(r"[ \t]+", " ", x).strip()]
     uniq: List[str] = []
@@ -49,10 +48,8 @@ def dense_search(ix: Index, query: str, topk: int) -> List[str]:
 
 
 def bm25_search(ix: Index, query: str, topk: int) -> List[str]:
-    def tok(s: str) -> List[str]:
-        return re.findall(r"[a-z0-9]+", s.lower())
-
-    scores = ix.bm25.get_scores(tok(query))
+    tokens = TOKEN_PATTERN.findall(query.lower())
+    scores = ix.bm25.get_scores(tokens)
     ranked = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:topk]
     return [ix.bm25_id_lookup[i] for i in ranked]
 

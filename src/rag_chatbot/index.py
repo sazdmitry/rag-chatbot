@@ -2,12 +2,14 @@ import re
 from dataclasses import dataclass, field
 from typing import Dict, List
 
-from langchain_community.embeddings import OllamaEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from langchain_community.vectorstores import FAISS
 from rank_bm25 import BM25Okapi
 
-from .config import Config
-from .chunking import Chunk
+from rag_chatbot.config import Config
+from rag_chatbot.chunking import Chunk
+
+TOKEN_PATTERN = re.compile(r"[a-z0-9]+")
 
 
 @dataclass
@@ -46,9 +48,7 @@ def build_index(chunks: List[Chunk], cfg: Config) -> Index:
     embeddings = make_embeddings(cfg)
     vectorstore = FAISS.from_texts(texts=texts, embedding=embeddings, metadatas=metadatas)
 
-    def tok(s: str) -> List[str]:
-        return re.findall(r"[a-z0-9]+", s.lower())
-    corpus_tokens = [tok(t) for t in texts]
+    corpus_tokens = [TOKEN_PATTERN.findall(t.lower()) for t in texts]
     bm25 = BM25Okapi(corpus_tokens)
 
     id_lookup = [m.id for m in vectorstore.docstore._dict.values()]  # type: ignore
