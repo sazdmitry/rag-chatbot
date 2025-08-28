@@ -28,7 +28,7 @@ class Config:
 
     # Reranker
     use_reranker: bool = True
-    reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    reranker_model: str = "dengcao/Qwen3-Embedding-4B:Q5_K_M"
 
     # Context packing
     max_context_chars: int = 9000

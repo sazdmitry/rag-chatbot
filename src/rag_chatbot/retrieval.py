@@ -1,7 +1,7 @@
 import re
 from typing import List, Dict
 
-from langchain_ollama import OllamaLLM
+from langchain_ollama import OllamaLLM, OllamaEmbeddings
 from rapidfuzz import fuzz
 
 from rag_chatbot.config import Config
@@ -9,13 +9,6 @@ from rag_chatbot.index import Index
 from rag_chatbot.prompt_registry import registry
 
 TOKEN_PATTERN = re.compile(r"[a-z0-9]+")
-
-# Optional reranker
-try:
-    from sentence_transformers import CrossEncoder  # type: ignore
-    _HAS_RERANKER = True
-except Exception:  # pragma: no cover - optional dependency
-    _HAS_RERANKER = False
 
 
 def multi_query_expand(query: str, cfg: Config) -> List[str]:
@@ -80,10 +73,20 @@ def expand_neighborhood(ix: Index, base_ids: List[str]) -> List[str]:
 
 
 def maybe_rerank(ix: Index, query: str, candidate_ids: List[str]) -> List[str]:
-    if not (ix.cfg.use_reranker and _HAS_RERANKER and candidate_ids):
+    if not (ix.cfg.use_reranker and candidate_ids):
         return candidate_ids
-    model = CrossEncoder(ix.cfg.reranker_model)
-    pairs = [(query, ix.chunks[cid].text) for cid in candidate_ids if cid in ix.chunks]
-    scores = model.predict(pairs)
-    ranked = [cid for _, cid in sorted(zip(scores, candidate_ids), key=lambda x: x[0], reverse=True)]
-    return ranked
+    try:
+        embeddings = OllamaEmbeddings(model=ix.cfg.reranker_model)
+    except Exception:
+        return candidate_ids
+
+    pairs = [(cid, ix.chunks[cid].text) for cid in candidate_ids if cid in ix.chunks]
+    if not pairs:
+        return candidate_ids
+    ids = [cid for cid, _ in pairs]
+    docs = [text for _, text in pairs]
+    query_vec = embeddings.embed_query(query)
+    doc_vecs = embeddings.embed_documents(docs)
+    scores = [sum(q * d for q, d in zip(query_vec, dv)) for dv in doc_vecs]
+    ranked_ids = [cid for _, cid in sorted(zip(scores, ids), key=lambda x: x[0], reverse=True)]
+    return ranked_ids
