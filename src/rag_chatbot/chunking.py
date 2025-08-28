@@ -34,6 +34,10 @@ def normalize_ws(s: str) -> str:
     return re.sub(r"[ \t]+", " ", s).strip()
 
 
+def join_hyphenated_line_breaks(s: str) -> str:
+    return re.sub(r"(\w+)-\s*\n\s*(\w+)", r"\1\2", s)
+
+
 def token_len(s: str) -> int:
     # rough token proxy ~4 chars/token
     return max(1, math.ceil(len(s) / 4))
@@ -53,7 +57,12 @@ def split_paragraphs(s: str) -> List[str]:
         merged.append(p)
     if buff:
         merged.append("\n\n".join(buff))
-    return [normalize_ws(x.replace("\n", " ")) for x in merged if normalize_ws(x)]
+    cleaned: List[str] = []
+    for x in merged:
+        j = join_hyphenated_line_breaks(x)
+        if normalize_ws(j):
+            cleaned.append(normalize_ws(j.replace("\n", " ")))
+    return cleaned
 
 
 def parse_toc(pages: List[Tuple[int, str]], n_pages: int):
