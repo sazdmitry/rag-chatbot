@@ -1,7 +1,9 @@
 langchain
 langchain-community
 langchain-ollama
+langchain-aws
 pypdf
 faiss-cpu
 rank-bm25
 rapidfuzz
+sentence-transformers

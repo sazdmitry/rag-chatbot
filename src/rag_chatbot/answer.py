@@ -1,9 +1,8 @@
 from typing import List, Tuple
 
-from langchain_ollama import OllamaLLM
-
 from rag_chatbot.chunking import Chunk
 from rag_chatbot.index import Index
+from rag_chatbot.models import get_llm
 from rag_chatbot.prompt_registry import registry
 from rag_chatbot.retrieval import (
     bm25_search,
@@ -48,7 +47,7 @@ def answer_query(ix: Index, query: str) -> Tuple[str, List[Chunk]]:
 
     kept = pack_context(ix, reranked)
     ctx = render_context(kept)
-    llm = OllamaLLM(model=ix.cfg.llm_model)
+    llm = get_llm(ix.cfg.llm_model, provider=ix.cfg.llm_provider)
     sys_prompt = registry["answer_system"]
     user_prompt = registry["answer_user"].format(query=query, ctx=ctx)
     full_prompt = f"<|system|>\n{sys_prompt}\n<|user|>\n{user_prompt}"
