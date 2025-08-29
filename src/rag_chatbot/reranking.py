@@ -46,10 +46,10 @@ class CrossEncoderReranker(BaseReranker):
         self.model = get_cross_encoder(model_name, **kwargs)
 
     def rerank(self, ix: Index, query: str, candidate_ids: List[str]) -> List[str]:
-        pairs = [(query, ix.chunks[cid].text) for cid in candidate_ids if cid in ix.chunks]
-        if not pairs:
+        filtered_ids = [cid for cid in candidate_ids if cid in ix.chunks]
+        if not filtered_ids:
             return candidate_ids
+        pairs = [(query, ix.chunks[cid].text) for cid in filtered_ids]
         scores = self.model.predict(pairs)
-        ids = [cid for cid, _ in pairs]
-        ranked = [cid for _, cid in sorted(zip(scores, ids), key=lambda x: x[0], reverse=True)]
+        ranked = [cid for _, cid in sorted(zip(scores, filtered_ids), key=lambda x: x[0], reverse=True)]
         return ranked
