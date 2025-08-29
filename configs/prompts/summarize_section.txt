@@ -1,3 +1,4 @@
 Provide a brief summary for the section titled "{title}" using the text below.
+Respond with the summary only; do not include any introduction or preface.
 
 {text}
