@@ -1,51 +1,29 @@
 import argparse
-import os
 import sys
 
 from rag_chatbot.answer import answer_query
-from rag_chatbot.chunking import build_chunks
-from rag_chatbot.config import Config
-from rag_chatbot.index import build_index
-from rag_chatbot.pdf_utils import load_pdf_text
+from rag_chatbot.index import load_index
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="TOC‑aware Hybrid RAG for PDFs (LangChain + Ollama)")
-    parser.add_argument("--pdf", help="Path to the PDF user manual", default="data/Manual_ver3.pdf")
+    parser = argparse.ArgumentParser(description="TOC‑aware Hybrid RAG CLI")
+    parser.add_argument("--index", default="data/index", help="Path to preprocessed index")
     parser.add_argument("--ask", help="Single question to ask")
     parser.add_argument("--interactive", action="store_true", help="Interactive Q&A loop")
-    parser.add_argument("--model", help="Ollama LLM model (default llama3.2:3b)")
-    parser.add_argument("--embed", help="Ollama embedding model (default bge-m3)")
-    parser.add_argument("--toc-pages", type=int, default=0, help="Number of initial table-of-contents pages to parse")
-    parser.add_argument("--footer-regex", help="Regular expression to remove footer text from each page")
+    parser.add_argument("--model", help="LLM model override")
+    parser.add_argument("--llm-provider", help="LLM provider override (ollama or bedrock)")
     args = parser.parse_args()
 
-    cfg = Config()
+    print("[1/1] Loading index …", file=sys.stderr)
+    ix = load_index(args.index)
+    cfg = ix.cfg
     if args.model:
         cfg.llm_model = args.model
-    if args.embed:
-        cfg.embed_model = args.embed
-    if args.toc_pages:
-        cfg.toc_pages = args.toc_pages
-    if args.footer_regex:
-        cfg.footer_regex = args.footer_regex
-
-    if not os.path.exists(args.pdf):
-        print(f"PDF not found: {args.pdf}", file=sys.stderr)
-        sys.exit(1)
-
-    print("[1/4] Reading PDF …", file=sys.stderr)
-    pages = load_pdf_text(args.pdf)
-
-    print("[2/4] Building chunks …", file=sys.stderr)
-    chunks = build_chunks(pages, cfg)
-    print(f"  chunks: {len(chunks)}")
-
-    print("[3/4] Building hybrid index (FAISS + BM25) …", file=sys.stderr)
-    ix = build_index(chunks, cfg)
+    if args.llm_provider:
+        cfg.llm_provider = args.llm_provider
 
     def ask(q: str) -> None:
-        print("\n[4/4] Retrieving & answering …", file=sys.stderr)
+        print("\nRetrieving & answering …", file=sys.stderr)
         ans, used = answer_query(ix, q)
         print("\n=== ANSWER ===\n")
         print(ans)

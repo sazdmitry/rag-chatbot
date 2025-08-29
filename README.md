@@ -10,29 +10,33 @@ pip install -r requirements.txt
 
 ## Usage
 
+### 1. Preprocess documents (run once)
+
+```bash
+python preprocess_pdf.py --pdf /path/manual.pdf --output data/index
+```
+
+Use `--config path.json` to override defaults from a JSON config file. Add
+`--summary` to generate optional summaries for chunks and sections. The
+preprocessing step builds the FAISS/BM25 index and stores it on disk so it can
+be reused by the chat CLI.
+
+### 2. Query the chatbot
+
 Ask a single question:
 
 ```bash
-python rag_pdf_ollama.py --pdf /path/manual.pdf --ask "What export formats are supported?"
+python rag_pdf_ollama.py --index data/index --ask "What export formats are supported?"
 ```
 
 Interactive session:
 
 ```bash
-python rag_pdf_ollama.py --pdf /path/manual.pdf --interactive
+python rag_pdf_ollama.py --index data/index --interactive
 ```
 
-You can specify alternative Ollama models via `--model` and `--embed`.
-
-If the PDF has a table of contents or repetitive footers you want to
-handle specially, the CLI offers additional options:
-
-```bash
-python rag_pdf_ollama.py --pdf /path/manual.pdf --toc-pages 5 --footer-regex "Footer text"
-```
-
-* `--toc-pages` – number of initial pages that form the table of contents (they are parsed but not chunked).
-* `--footer-regex` – regular expression removed from each page (useful for footers).
+The chat CLI allows overriding the answering model and provider via
+`--model` and `--llm-provider`.
 
 For direct module execution, ensure the `src` directory is on `PYTHONPATH` and run:
 
