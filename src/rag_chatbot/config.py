@@ -7,8 +7,9 @@ class Config:
 
     # Models
     llm_model: str = "llama3.2:3b"
-    embed_model_primary: str = "bge-m3"
-    embed_model_fallback: str = "nomic-embed-text"
+    llm_provider: str = "ollama"
+    embed_model: str = "bge-m3"
+    embed_provider: str = "ollama"
 
     # PDF pre-processing
     toc_pages: int = 0  # number of initial table-of-contents pages
@@ -28,7 +29,9 @@ class Config:
 
     # Reranker
     use_reranker: bool = True
-    reranker_model: str = "dengcao/Qwen3-Embedding-4B:Q5_K_M"
+    reranker_type: str = "cross-encoder"  # "llm" or "cross-encoder"
+    reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    reranker_provider: str = "hf"
 
     # Context packing
     max_context_chars: int = 9000

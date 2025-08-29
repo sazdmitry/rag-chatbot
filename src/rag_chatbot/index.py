@@ -2,12 +2,12 @@ import re
 from dataclasses import dataclass, field
 from typing import Dict, List
 
-from langchain_ollama import OllamaEmbeddings
 from langchain_community.vectorstores import FAISS
 from rank_bm25 import BM25Okapi
 
 from rag_chatbot.config import Config
 from rag_chatbot.chunking import Chunk
+from rag_chatbot.models import get_embeddings
 
 TOKEN_PATTERN = re.compile(r"[a-z0-9]+")
 
@@ -24,13 +24,6 @@ class Index:
     siblings_by_parent: Dict[str, List[str]] = field(default_factory=dict)
 
 
-def make_embeddings(cfg: Config) -> OllamaEmbeddings:
-    try:
-        return OllamaEmbeddings(model=cfg.embed_model_primary)
-    except Exception:
-        return OllamaEmbeddings(model=cfg.embed_model_fallback)
-
-
 def build_index(chunks: List[Chunk], cfg: Config) -> Index:
     texts = [c.text for c in chunks]
     metadatas = [{
@@ -45,7 +38,7 @@ def build_index(chunks: List[Chunk], cfg: Config) -> Index:
         "parent_key": c.parent_key,
     } for c in chunks]
 
-    embeddings = make_embeddings(cfg)
+    embeddings = get_embeddings(cfg.embed_model, provider=cfg.embed_provider)
     vectorstore = FAISS.from_texts(texts=texts, embedding=embeddings, metadatas=metadatas)
 
     corpus_tokens = [TOKEN_PATTERN.findall(t.lower()) for t in texts]

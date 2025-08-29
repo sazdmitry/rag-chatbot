@@ -1,18 +1,19 @@
 import re
-from typing import List, Dict
+from typing import Dict, List
 
-from langchain_ollama import OllamaLLM, OllamaEmbeddings
 from rapidfuzz import fuzz
 
 from rag_chatbot.config import Config
 from rag_chatbot.index import Index
+from rag_chatbot.models import get_llm
 from rag_chatbot.prompt_registry import registry
+from rag_chatbot.reranking import CrossEncoderReranker, LLMReranker
 
 TOKEN_PATTERN = re.compile(r"[a-z0-9]+")
 
 
 def multi_query_expand(query: str, cfg: Config) -> List[str]:
-    llm = OllamaLLM(model=cfg.llm_model)
+    llm = get_llm(cfg.llm_model, provider=cfg.llm_provider)
     prompt = registry["multi_query_expand"].format(
         n_query_expansions=cfg.n_query_expansions, query=query
     )
@@ -75,18 +76,12 @@ def expand_neighborhood(ix: Index, base_ids: List[str]) -> List[str]:
 def maybe_rerank(ix: Index, query: str, candidate_ids: List[str]) -> List[str]:
     if not (ix.cfg.use_reranker and candidate_ids):
         return candidate_ids
-    try:
-        embeddings = OllamaEmbeddings(model=ix.cfg.reranker_model)
-    except Exception:
-        return candidate_ids
 
-    pairs = [(cid, ix.chunks[cid].text) for cid in candidate_ids if cid in ix.chunks]
-    if not pairs:
-        return candidate_ids
-    ids = [cid for cid, _ in pairs]
-    docs = [text for _, text in pairs]
-    query_vec = embeddings.embed_query(query)
-    doc_vecs = embeddings.embed_documents(docs)
-    scores = [sum(q * d for q, d in zip(query_vec, dv)) for dv in doc_vecs]
-    ranked_ids = [cid for _, cid in sorted(zip(scores, ids), key=lambda x: x[0], reverse=True)]
-    return ranked_ids
+    rtype = getattr(ix.cfg, "reranker_type", "cross-encoder")
+    provider = getattr(ix.cfg, "reranker_provider", "hf")
+    if rtype == "llm":
+        reranker = LLMReranker(ix.cfg.reranker_model, provider=provider)
+    else:
+        reranker = CrossEncoderReranker(ix.cfg.reranker_model)
+
+    return reranker.rerank(ix, query, candidate_ids)
