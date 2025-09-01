@@ -16,8 +16,8 @@ class Config:
     footer_regex: str = ""
 
     # Chunking
-    atomic_chunk_tokens: int = 320
-    atomic_chunk_overlap_tokens: int = 48
+    atomic_chunk_tokens: int = 1000
+    atomic_chunk_overlap_tokens: int = 120
     max_section_tokens: int = 1100
 
     # Retrieval
@@ -38,4 +38,4 @@ class Config:
     max_context_chunks: int = 12
 
     # Prompting
-    n_query_expansions: int = 4
+    n_query_expansions: int = 0

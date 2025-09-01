@@ -79,9 +79,10 @@ def maybe_rerank(ix: Index, query: str, candidate_ids: List[str]) -> List[str]:
 
     rtype = getattr(ix.cfg, "reranker_type", "cross-encoder")
     provider = getattr(ix.cfg, "reranker_provider", "hf")
+    cache_folder = getattr(ix.cfg, "cache_folder", "data/cache")
     if rtype == "llm":
         reranker = LLMReranker(ix.cfg.reranker_model, provider=provider)
     else:
-        reranker = CrossEncoderReranker(ix.cfg.reranker_model)
+        reranker = CrossEncoderReranker(ix.cfg.reranker_model, cache_folder=cache_folder)
 
     return reranker.rerank(ix, query, candidate_ids)
