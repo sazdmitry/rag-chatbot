@@ -13,7 +13,7 @@ pip install -r requirements.txt
 ### 1. Preprocess documents (run once)
 
 ```bash
-python preprocess_pdf.py --pdf /path/manual.pdf --output data/index
+python scripts/preprocess_pdf.py --pdf /path/manual.pdf --output data/index
 ```
 
 Use `--config path.json` to override defaults from a JSON config file. Add
@@ -24,23 +24,11 @@ be reused by the chat CLI.
 
 ### 2. Query the chatbot
 
-Ask a single question:
+Start an interactive session:
 
 ```bash
-python rag_pdf_ollama.py --index data/index --ask "What export formats are supported?"
-```
-
-Interactive session:
-
-```bash
-python rag_pdf_ollama.py --index data/index --interactive
+python scripts/rag_pdf_ollama.py --index data/index
 ```
 
 The chat CLI allows overriding the answering model and provider via
 `--model` and `--llm-provider`.
-
-For direct module execution, ensure the `src` directory is on `PYTHONPATH` and run:
-
-```bash
-PYTHONPATH=src python -m rag_chatbot.cli --help
-```
