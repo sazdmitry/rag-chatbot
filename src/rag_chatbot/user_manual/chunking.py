@@ -4,7 +4,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
-from rag_chatbot.config import Config
+from rag_chatbot.user_manual.config import Config
 
 
 @dataclass

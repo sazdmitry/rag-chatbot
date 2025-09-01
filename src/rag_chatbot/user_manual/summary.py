@@ -4,10 +4,10 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
 
-from rag_chatbot.chunking import Chunk
-from rag_chatbot.config import Config
+from rag_chatbot.common.prompt_registry import registry
 from rag_chatbot.models import get_llm
-from rag_chatbot.prompt_registry import registry
+from rag_chatbot.user_manual.chunking import Chunk
+from rag_chatbot.user_manual.config import Config
 
 
 def _heading_path(num: str, title_by_num: Dict[str, str]) -> str:

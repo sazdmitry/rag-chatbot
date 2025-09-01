@@ -1,8 +1,8 @@
 import re
 from typing import List
 
-from rag_chatbot.index import Index
 from rag_chatbot.models import get_llm, get_cross_encoder
+from rag_chatbot.user_manual.index import Index
 
 
 class BaseReranker:
