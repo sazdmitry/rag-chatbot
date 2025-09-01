@@ -2,6 +2,7 @@ import argparse
 import sys
 
 from chatbot_utils import load_index, print_answer
+from rag_chatbot.user_manual.config import Config
 
 
 def main() -> None:
@@ -12,12 +13,12 @@ def main() -> None:
     args = parser.parse_args()
 
     print("[1/1] Loading index …", file=sys.stderr)
-    ix = load_index(args.index)
-    cfg = ix.cfg
+    cfg = Config()
     if args.model:
         cfg.llm_model = args.model
     if args.llm_provider:
         cfg.llm_provider = args.llm_provider
+    ix = load_index(args.index, cfg)
 
     print("\nInteractive mode. Type your question (or 'exit').\n")
     while True:

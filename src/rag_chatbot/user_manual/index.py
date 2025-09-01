@@ -117,21 +117,38 @@ def save_index(ix: Index, path: str) -> None:
         pickle.dump(meta, f)
 
 
-def load_index(path: str) -> Index:
-    """Load a previously saved index from disk."""
+def load_index(path: str, cfg: Optional[Config] = None) -> Index:
+    """Load a previously saved index from disk.
+
+    If ``cfg`` is provided, its values will be used for runtime configuration
+    (e.g. LLM model) while the embedding settings stored with the index are
+    preserved. This allows changing chatbot parameters after preprocessing.
+    """
+
     with open(os.path.join(path, "meta.pkl"), "rb") as f:
         meta = pickle.load(f)
 
-    cfg = Config(**meta["cfg"])
-    embeddings = get_embeddings(cfg.embed_model, provider=cfg.embed_provider)
-    faiss_store = FAISS.load_local(os.path.join(path, "faiss"), embeddings, allow_dangerous_deserialization=True)
+    meta_cfg = meta["cfg"]
+
+    if cfg is None:
+        cfg_out = Config(**meta_cfg)
+    else:
+        cfg_out = cfg
+        # Ensure embedding settings match the preprocessed index
+        cfg_out.embed_model = meta_cfg.get("embed_model", cfg_out.embed_model)
+        cfg_out.embed_provider = meta_cfg.get("embed_provider", cfg_out.embed_provider)
+
+    embeddings = get_embeddings(meta_cfg["embed_model"], provider=meta_cfg["embed_provider"])
+    faiss_store = FAISS.load_local(
+        os.path.join(path, "faiss"), embeddings, allow_dangerous_deserialization=True
+    )
 
     corpus_tokens = meta["bm25_corpus_tokens"]
     bm25 = BM25Okapi(corpus_tokens)
     chunk_objs = {c["id"]: Chunk(**c) for c in meta["chunks"]}
 
     return Index(
-        cfg=cfg,
+        cfg=cfg_out,
         faiss=faiss_store,
         id_lookup=meta["id_lookup"],
         bm25=bm25,
