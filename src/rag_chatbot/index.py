@@ -2,7 +2,7 @@ import os
 import pickle
 import re
 from dataclasses import asdict, dataclass, field
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain_community.vectorstores import FAISS
 from rank_bm25 import BM25Okapi
@@ -24,15 +24,15 @@ class Index:
     bm25_id_lookup: List[str]
     chunks: Dict[str, Chunk] = field(default_factory=dict)
     siblings_by_parent: Dict[str, List[str]] = field(default_factory=dict)
-    chunk_summaries: Dict[str, str] = field(default_factory=dict)
-    section_summaries: Dict[str, str] = field(default_factory=dict)
+    chunk_summaries: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    section_summaries: Dict[str, Dict[str, Any]] = field(default_factory=dict)
 
 
 def build_index(
     chunks: List[Chunk],
     cfg: Config,
-    chunk_summaries: Optional[Dict[str, str]] = None,
-    section_summaries: Optional[Dict[str, str]] = None,
+    chunk_summaries: Optional[Dict[str, Dict[str, Any]]] = None,
+    section_summaries: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> Index:
     chunk_summaries = chunk_summaries or {}
     section_summaries = section_summaries or {}
@@ -40,13 +40,16 @@ def build_index(
     texts = []
     metadatas = []
     for c in chunks:
-        text_parts = [c.text]
-        if c.id in chunk_summaries:
-            text_parts.append(chunk_summaries[c.id])
+        text_parts: List[str] = []
+        ch_sum = chunk_summaries.get(c.id)
+        if ch_sum:
+            text_parts.append(ch_sum.get("retrieval_text", ""))
         sec_sum = section_summaries.get(c.heading_num)
         if sec_sum:
-            text_parts.append(sec_sum)
-        texts.append("\n".join(text_parts))
+            text_parts.append(sec_sum.get("retrieval_text", ""))
+        if not text_parts:
+            text_parts.append(c.text)
+        texts.append("\n".join(t for t in text_parts if t))
         meta = {
             "id": c.id,
             "toc_path": c.toc_path,
@@ -58,8 +61,8 @@ def build_index(
             "ordinal_in_section": c.ordinal_in_section,
             "parent_key": c.parent_key,
         }
-        if c.id in chunk_summaries:
-            meta["chunk_summary"] = chunk_summaries[c.id]
+        if ch_sum:
+            meta["chunk_summary"] = ch_sum
         if sec_sum:
             meta["section_summary"] = sec_sum
         metadatas.append(meta)

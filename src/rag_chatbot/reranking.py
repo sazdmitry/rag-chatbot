@@ -29,7 +29,7 @@ class LLMReranker(BaseReranker):
                 f"Query: {query}\nDocument: {text}\nScore:"
             )
             try:
-                out = self.llm.invoke(prompt)
+                out = self.llm.invoke(prompt).content
                 match = re.search(r"[0-1]?\.\d+", out)
                 score = float(match.group()) if match else 0.0
             except Exception:
