@@ -3,11 +3,11 @@ from typing import Dict, List
 
 from rapidfuzz import fuzz
 
-from rag_chatbot.config import Config
-from rag_chatbot.index import Index
+from rag_chatbot.common.prompt_registry import registry
 from rag_chatbot.models import get_llm
-from rag_chatbot.prompt_registry import registry
-from rag_chatbot.reranking import CrossEncoderReranker, LLMReranker
+from rag_chatbot.user_manual.config import Config
+from rag_chatbot.user_manual.index import Index
+from rag_chatbot.user_manual.reranking import CrossEncoderReranker, LLMReranker
 
 TOKEN_PATTERN = re.compile(r"[a-z0-9]+")
 

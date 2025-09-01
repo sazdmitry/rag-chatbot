@@ -7,9 +7,9 @@ from typing import Any, Dict, List, Optional
 from langchain_community.vectorstores import FAISS
 from rank_bm25 import BM25Okapi
 
-from rag_chatbot.config import Config
-from rag_chatbot.chunking import Chunk
 from rag_chatbot.models import get_embeddings
+from rag_chatbot.user_manual.config import Config
+from rag_chatbot.user_manual.chunking import Chunk
 
 TOKEN_PATTERN = re.compile(r"[a-z0-9]+")
 

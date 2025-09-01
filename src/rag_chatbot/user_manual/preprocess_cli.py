@@ -3,11 +3,11 @@ import json
 import os
 import sys
 
-from rag_chatbot.chunking import build_chunks
-from rag_chatbot.config import Config
-from rag_chatbot.index import build_index, save_index
-from rag_chatbot.pdf_utils import load_pdf_text
-from rag_chatbot.summary import build_summaries
+from rag_chatbot.user_manual.chunking import build_chunks
+from rag_chatbot.user_manual.config import Config
+from rag_chatbot.user_manual.index import build_index, save_index
+from rag_chatbot.user_manual.pdf_utils import load_pdf_text
+from rag_chatbot.user_manual.summary import build_summaries
 
 
 def main() -> None:

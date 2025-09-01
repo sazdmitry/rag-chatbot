@@ -1,8 +1,8 @@
 import argparse
 import sys
 
-from rag_chatbot.answer import answer_query
-from rag_chatbot.index import load_index
+from rag_chatbot.user_manual.answer import answer_query
+from rag_chatbot.user_manual.index import load_index
 
 
 def main() -> None:
