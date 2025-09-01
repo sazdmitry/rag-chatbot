@@ -17,7 +17,7 @@ def multi_query_expand(query: str, cfg: Config) -> List[str]:
     prompt = registry["multi_query_expand"].format(
         n_query_expansions=cfg.n_query_expansions, query=query
     )
-    out = llm.invoke(prompt)
+    out = llm.invoke(prompt).content
     lines = [re.sub(r"[ \t]+", " ", x).strip() for x in out.splitlines() if re.sub(r"[ \t]+", " ", x).strip()]
     uniq: List[str] = []
     for s in lines:

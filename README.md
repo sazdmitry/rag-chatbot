@@ -17,7 +17,8 @@ python preprocess_pdf.py --pdf /path/manual.pdf --output data/index
 ```
 
 Use `--config path.json` to override defaults from a JSON config file. Add
-`--summary` to generate optional summaries for chunks and sections. The
+`--summary` to generate structured JSON summaries for chunks and sections. The
+summaries use LangChain's `with_structured_output` to enforce valid JSON. The
 preprocessing step builds the FAISS/BM25 index and stores it on disk so it can
 be reused by the chat CLI.
 

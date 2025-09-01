@@ -51,5 +51,5 @@ def answer_query(ix: Index, query: str) -> Tuple[str, List[Chunk]]:
     sys_prompt = registry["answer_system"]
     user_prompt = registry["answer_user"].format(query=query, ctx=ctx)
     full_prompt = f"<|system|>\n{sys_prompt}\n<|user|>\n{user_prompt}"
-    ans = llm.invoke(full_prompt)
+    ans = llm.invoke(full_prompt).content
     return ans.strip(), kept

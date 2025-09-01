@@ -2,11 +2,11 @@ from typing import Any
 
 
 def get_llm(model_name: str, provider: str = "ollama", **kwargs: Any):
-    """Return an LLM instance for the given provider."""
+    """Return a chat-centric LLM instance for the given provider."""
     if provider == "ollama":
-        from langchain_ollama import OllamaLLM
+        from langchain_ollama import ChatOllama
 
-        return OllamaLLM(model=model_name, **kwargs)
+        return ChatOllama(model=model_name, **kwargs)
     elif provider == "bedrock":
         from langchain_aws import ChatBedrockConverse
 
