@@ -104,7 +104,8 @@ def save_index(ix: Index, path: str) -> None:
     os.makedirs(path, exist_ok=True)
     ix.faiss.save_local(os.path.join(path, "faiss"))
     meta = {
-        "cfg": asdict(ix.cfg),
+        "embed_model": ix.cfg.embed_model,
+        "embed_provider": ix.cfg.embed_provider,
         "id_lookup": ix.id_lookup,
         "bm25_corpus_tokens": ix.bm25_corpus_tokens,
         "bm25_id_lookup": ix.bm25_id_lookup,
@@ -120,25 +121,20 @@ def save_index(ix: Index, path: str) -> None:
 def load_index(path: str, cfg: Optional[Config] = None) -> Index:
     """Load a previously saved index from disk.
 
-    If ``cfg`` is provided, its values will be used for runtime configuration
-    (e.g. LLM model) while the embedding settings stored with the index are
-    preserved. This allows changing chatbot parameters after preprocessing.
+    If ``cfg`` is provided, its values will be used for runtime configuration.
+    Only the embedding settings stored with the index are preserved, allowing
+    chatbot parameters to change after preprocessing.
     """
 
     with open(os.path.join(path, "meta.pkl"), "rb") as f:
         meta = pickle.load(f)
 
-    meta_cfg = meta["cfg"]
+    cfg_out = cfg or Config()
+    # Ensure embedding settings match the preprocessed index
+    cfg_out.embed_model = meta.get("embed_model", cfg_out.embed_model)
+    cfg_out.embed_provider = meta.get("embed_provider", cfg_out.embed_provider)
 
-    if cfg is None:
-        cfg_out = Config(**meta_cfg)
-    else:
-        cfg_out = cfg
-        # Ensure embedding settings match the preprocessed index
-        cfg_out.embed_model = meta_cfg.get("embed_model", cfg_out.embed_model)
-        cfg_out.embed_provider = meta_cfg.get("embed_provider", cfg_out.embed_provider)
-
-    embeddings = get_embeddings(meta_cfg["embed_model"], provider=meta_cfg["embed_provider"])
+    embeddings = get_embeddings(cfg_out.embed_model, provider=cfg_out.embed_provider)
     faiss_store = FAISS.load_local(
         os.path.join(path, "faiss"), embeddings, allow_dangerous_deserialization=True
     )
